@@ -28,9 +28,11 @@ class Crawl_Request(object):
         for (url) in re.findall(r'<span class="profile-card">.*?<a href="(.*?)" title=".*?"', textHTML, re.S):
             idProfile = re.findall(r'timnguoiyeu.com.vn/user/index/(\d{1,10})$', url)[0]
             if str(idProfile).isdigit():
+                # Do Something => phoneProfile
+                phoneProfile = self.getPhoneNumber(idProfile)
                 with self.lock_AddCard:
-                    self.arrCardProfile.append((idProfile, "http://timnguoiyeu.com.vn/user/index/%s" %(str(idProfile))))
-    def findProfile(self, idProfile, textHTML):
+                    self.arrCardProfile.append((idProfile, phoneProfile, "http://timnguoiyeu.com.vn/user/index/%s" %(str(idProfile))))
+    def findProfile(self, idProfile, phoneProfile, textHTML):
         name = "null"
         lives = "null"
         gender = "null"
@@ -89,7 +91,7 @@ class Crawl_Request(object):
                 introduce = value
         pass
         with self.lock_AddProfile:
-            self.arrProfile.append((idProfile, name.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), lives.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), gender.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), age.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), height.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), education.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), job.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), income.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), marriage.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), staying.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), child.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), zodiac.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), target.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), condition.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), form.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), introduce.replace(', ', ' ').replace(',','').replace("'",'').replace('"','')))
+            self.arrProfile.append((idProfile, name.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), lives.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), gender.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), age.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), phoneProfile, height.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), education.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), job.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), income.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), marriage.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), staying.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), child.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), zodiac.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), target.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), condition.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), form.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), introduce.replace(', ', ' ').replace(',','').replace("'",'').replace('"','')))
     def urlCardProfile(self, url):
         try:
             headers = OrderedHeaders((
@@ -116,7 +118,7 @@ class Crawl_Request(object):
         pass
 
         return response.content
-        pass
+
     def urlProfile(self, url):
         try:
             headers = OrderedHeaders((
@@ -149,6 +151,34 @@ class Crawl_Request(object):
         maxPage = maxPage if str(maxPage).isdigit() else 5000
         return int(maxPage)
 
+    def getPhoneNumber(self,id):
+        try:
+            headers = OrderedHeaders((
+                ('Host', 'timnguoiyeu.com.vn'),
+                ('Connection', 'keep-alive'),
+                ('Cache-Control', 'no-cache'),
+                ('Upgrade-Insecure-Requests', '1'),
+                ('User-Agent', self.UserAgent),
+                ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'),
+                ('Pragma', 'no-cache'),
+                ('Referer', 'http://timnguoiyeu.com.vn/'),
+                ('Accept-Encoding', 'gzip, deflate'),
+                ('Accept-Language', 'en-US,en;q=0.9,vi;q=0.8'),
+                ('Cookie', '_ga=GA1.3.72341506.1583471266; _gid=GA1.3.1425716352.1583471266; PHPSESSID=ab119cs6l8592uh20kn3n1kb23; _gat=1; idn=182742')
+            ))
+        except:
+            return self.getPhoneNumber(id)
+        try:
+            response = self.session.get("http://timnguoiyeu.com.vn/user/xin-sdt/{userInfoId}/layso/ok".format(userInfoId=id), headers=headers, verify=self.verifed, allow_redirects=self.allow_redirects, timeout=self.timeout)
+        except:
+            pass
+        #f = open("Phone_%s.html" %(str(id)), "w")
+        #f.write(response.content)
+        #f.close()
+        phonenum = re.findall(r'</h1></div><div class="boss alert"><span><a href=".*?">(.*?)</a></span></div>', response.content, re.S)
+        print phonenum
+        return str(phonenum[0]) if len(phonenum) > 0 else "null"
+
 Crawl_Manager = Crawl_Request()
 
 #maxPage = Crawl_Manager.getMaxPage()
@@ -160,8 +190,8 @@ threader= Threader(maxPage)
 
 def Crawal_Card_Profile_Run(i):
     Crawl_Manager.findCardProfile(Crawl_Manager.urlCardProfile('http://timnguoiyeu.com.vn/trang-{i}.html'.format(i=i)))
-def Crawal_Profile_Run(idProfile, urlProfile):
-    Crawl_Manager.findProfile(idProfile, Crawl_Manager.urlProfile(urlProfile))
+def Crawal_Profile_Run(idProfile, phoneProfile, urlProfile):
+    Crawl_Manager.findProfile(idProfile, phoneProfile, Crawl_Manager.urlProfile(urlProfile))
 
 if maxPage > 1:
     for i in range(1, maxPage):
@@ -173,17 +203,18 @@ else:
 pass
 threader = Threader(len(Crawl_Manager.arrCardProfile))
 
-for (idProfile, urlProfile) in Crawl_Manager.arrCardProfile:
-    threader.put(Crawal_Profile_Run,[str(idProfile), str(urlProfile)])
+for (idProfile, phoneProfile, urlProfile) in Crawl_Manager.arrCardProfile:
+    threader.put(Crawal_Profile_Run,[str(idProfile), str(phoneProfile), str(urlProfile)])
 pass
 threader.finish_all()
 
 raw_json = []
-[raw_json.append( "(" + '{id}, {name}, {lives}, {gender}, {age}, {height}, {education}, {job}, {income}, {marriage}, {staying}, {child}, {zodiac}, {target}, {condition}, {form}, {introduce})'.format(id=idProfile,
+[raw_json.append( "(" + '{id}, {name}, {lives}, {gender}, {age}, {phone}, {height}, {education}, {job}, {income}, {marriage}, {staying}, {child}, {zodiac}, {target}, {condition}, {form}, {introduce})'.format(id=idProfile,
 name="'" + name + "'" if name != "null" else "null",
 lives="'" + lives + "'" if lives != "null" else "null",
 gender="'" + gender + "'" if gender != "null" else "null",
 age="'" + age + "'" if age != "null" else "null",
+phone="'" + phoneProfile + "'" if phoneProfile != "null" else "null",
 height="'" + height + "'" if height != "null" else "null",
 education="'" + education + "'" if education != "null" else "null",
 job="'" + job + "'" if job != "null" else "null",
@@ -195,7 +226,7 @@ zodiac="'" + zodiac + "'" if zodiac != "null" else "null",
 target="'" + target + "'" if target != "null" else "null",
 condition="'" + condition + "'" if condition != "null" else "null",
 form="'" + form + "'" if form != "null" else "null",
-introduce="'" + introduce + "'" if introduce != "null" else "null")) for (idProfile, name, lives, gender, age, height, education, job, income, marriage, staying, child, zodiac, target, condition, form, introduce) in Crawl_Manager.arrProfile]
+introduce="'" + introduce + "'" if introduce != "null" else "null")) for (idProfile, name, lives, gender, age, phoneProfile, height, education, job, income, marriage, staying, child, zodiac, target, condition, form, introduce) in Crawl_Manager.arrProfile]
 
 f = open("Exported.sql", "w")
 f.write("CREATE TABLE IF NOT EXISTS `data1` (\n")
