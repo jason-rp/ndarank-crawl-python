@@ -97,9 +97,12 @@ class Crawl_Request(object):
             if 'Hình thức' in key:
                 form = value
             if 'Giới thiệu' in key:
-                introduce = value
-            if 'Muốn tìm' in key:
-                wanted = value
+                if '♡' in value:
+                    arrIntroduce = value.split("♡")
+                    introduce = str(arrIntroduce[0]).strip()
+                    wanted = str(arrIntroduce[1]).strip()
+                else:
+                    introduce = value
         pass
         with self.lock_AddProfile:
             self.arrProfile.append((idProfile, name.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), img.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), district.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), city.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), gender.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), age.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), phoneProfile, height.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), education.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), job.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), income.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), marriage.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), staying.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), child.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), zodiac.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), target.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), condition.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), form.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), introduce.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''),wanted.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), urlProfile))
