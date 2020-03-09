@@ -51,6 +51,7 @@ class Crawl_Request(object):
         condition = "null"
         form = "null"
         introduce = "null"
+        wanted = "null"
 
         formProfile = re.findall(r'</h2>(.*?)<div class="clear"></div><div class="clear"></div>', textHTML, re.S)[0]
         for (key, value) in re.findall(r'<div class="muc">(.*?):(.*?)$', formProfile, re.M):
@@ -97,9 +98,11 @@ class Crawl_Request(object):
                 form = value
             if 'Giới thiệu' in key:
                 introduce = value
+            if 'Muốn tìm' in key:
+                wanted = value
         pass
         with self.lock_AddProfile:
-            self.arrProfile.append((idProfile, name.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), img.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), district.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), city.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), gender.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), age.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), phoneProfile, height.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), education.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), job.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), income.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), marriage.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), staying.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), child.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), zodiac.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), target.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), condition.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), form.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), introduce.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), urlProfile))
+            self.arrProfile.append((idProfile, name.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), img.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), district.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), city.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), gender.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), age.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), phoneProfile, height.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), education.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), job.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), income.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), marriage.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), staying.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), child.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), zodiac.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), target.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), condition.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), form.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), introduce.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''),wanted.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), urlProfile))
     def urlCardProfile(self, url):
         try:
             headers = OrderedHeaders((
@@ -189,7 +192,7 @@ class Crawl_Request(object):
         #f.write(response.content)
         #f.close()
         phonenum = re.findall(r'</h1></div><div class="boss alert"><span><a href=".*?">(.*?)</a></span></div>', response.content, re.S)
-        print phonenum
+        #print phonenum
         return str(phonenum[0]) if len(phonenum) > 0 else "null"
 
 Crawl_Manager = Crawl_Request()
@@ -197,7 +200,7 @@ Crawl_Manager = Crawl_Request()
 #maxPage = Crawl_Manager.getMaxPage()
 maxPage = 2
 
-print maxPage
+#print maxPage
 
 threader= Threader(maxPage)
 
@@ -222,7 +225,7 @@ pass
 threader.finish_all()
 
 raw_json = []
-[raw_json.append( "(" + '{id}, {name}, {img} , {district}, {city}, {gender}, {age}, {phone}, {height}, {education}, {job}, {income}, {marriage}, {staying}, {child}, {zodiac}, {target}, {condition}, {form}, {introduce}, {urlProfile})'.format(id=idProfile,
+[raw_json.append( "(" + '{id}, {name}, {img} , {district}, {city}, {gender}, {age}, {phone}, {height}, {education}, {job}, {income}, {marriage}, {staying}, {child}, {zodiac}, {target}, {condition}, {form}, {introduce},{wanted}, {urlProfile})'.format(id=idProfile,
 name="'" + name + "'" if name != "null" else "null",
 img="'" + img + "'" if img != "null" else "null",
 district="'" + district + "'" if district != "null" else "null",
@@ -242,7 +245,8 @@ target="'" + target + "'" if target != "null" else "null",
 condition="'" + condition + "'" if condition != "null" else "null",
 form="'" + form + "'" if form != "null" else "null",
 introduce="'" + introduce + "'" if introduce != "null" else "null",
-urlProfile="'" + urlProfile + "'" if urlProfile != "null" else "null")) for (idProfile, name, img, district, city, gender, age, phoneProfile, height, education, job, income, marriage, staying, child, zodiac, target, condition, form, introduce, urlProfile) in Crawl_Manager.arrProfile]
+wanted="'" + wanted + "'" if wanted != "null" else "null",
+urlProfile="'" + urlProfile + "'" if urlProfile != "null" else "null")) for (idProfile, name, img, district, city, gender, age, phoneProfile, height, education, job, income, marriage, staying, child, zodiac, target, condition, form, introduce,wanted, urlProfile) in Crawl_Manager.arrProfile]
 
 f = open("Exported.sql", "w")
 f.write("CREATE TABLE IF NOT EXISTS `data1` (\n")
@@ -266,6 +270,7 @@ f.write("`target` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`condition` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`form` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`introduce` VARCHAR(65535) CHARACTER SET utf8,\n")
+f.write("`wanted` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`urlProfile` VARCHAR(65535) CHARACTER SET utf8\n")
 f.write(");\n")
 f.write("INSERT INTO `data1` VALUES\n")
