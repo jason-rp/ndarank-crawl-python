@@ -32,9 +32,11 @@ class Crawl_Request(object):
                 phoneProfile = self.getPhoneNumber(idProfile)
                 with self.lock_AddCard:
                     self.arrCardProfile.append((idProfile, phoneProfile, "http://timnguoiyeu.com.vn/user/index/%s" %(str(idProfile))))
-    def findProfile(self, idProfile, phoneProfile, textHTML):
+    def findProfile(self, idProfile, phoneProfile, urlProfile, textHTML):
         name = "null"
-        lives = "null"
+        img = self.getImg(textHTML)
+        district = "null"
+        city = "null"
         gender = "null"
         age = "null"
         height = "null"
@@ -60,7 +62,13 @@ class Crawl_Request(object):
             if 'Họ và tên' in key:
                 name = value
             if 'Sống tại' in key:
-                lives = value
+                if ',' in value:
+                    arrLives = value.split(",")
+                    #
+                    district = str(arrLives[0]).strip()
+                    city = str(arrLives[1]).strip()
+                else:
+                    district = value
             if 'Giới tính' in key:
                 gender = value
             if 'Độ tuổi' in key:
@@ -91,7 +99,7 @@ class Crawl_Request(object):
                 introduce = value
         pass
         with self.lock_AddProfile:
-            self.arrProfile.append((idProfile, name.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), lives.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), gender.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), age.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), phoneProfile, height.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), education.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), job.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), income.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), marriage.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), staying.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), child.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), zodiac.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), target.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), condition.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), form.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), introduce.replace(', ', ' ').replace(',','').replace("'",'').replace('"','')))
+            self.arrProfile.append((idProfile, name.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), img.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), district.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), city.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), gender.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), age.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), phoneProfile, height.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), education.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), job.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), income.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), marriage.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), staying.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), child.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), zodiac.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), target.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), condition.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), form.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), introduce.replace(', ', ' ').replace(',','').replace("'",'').replace('"',''), urlProfile))
     def urlCardProfile(self, url):
         try:
             headers = OrderedHeaders((
@@ -150,7 +158,12 @@ class Crawl_Request(object):
         maxPage = maxPage[0] if len(maxPage) == 1 else 5000
         maxPage = maxPage if str(maxPage).isdigit() else 5000
         return int(maxPage)
-
+    def getImg(self, textHTML):
+        if 'class="imgw" src="' in textHTML:
+            return re.findall(r'class="imgw" src="(.*?)"', textHTML, re.S)[0]
+        elif 'class="media-images"' in textHTML:
+            return re.findall(r'class="media-images" id=".*?" src="(.*?)"', textHTML, re.S)[0]
+        return "null"
     def getPhoneNumber(self,id):
         try:
             headers = OrderedHeaders((
@@ -191,7 +204,7 @@ threader= Threader(maxPage)
 def Crawal_Card_Profile_Run(i):
     Crawl_Manager.findCardProfile(Crawl_Manager.urlCardProfile('http://timnguoiyeu.com.vn/trang-{i}.html'.format(i=i)))
 def Crawal_Profile_Run(idProfile, phoneProfile, urlProfile):
-    Crawl_Manager.findProfile(idProfile, phoneProfile, Crawl_Manager.urlProfile(urlProfile))
+    Crawl_Manager.findProfile(idProfile, phoneProfile, urlProfile, Crawl_Manager.urlProfile(urlProfile))
 
 if maxPage > 1:
     for i in range(1, maxPage):
@@ -209,9 +222,11 @@ pass
 threader.finish_all()
 
 raw_json = []
-[raw_json.append( "(" + '{id}, {name}, {lives}, {gender}, {age}, {phone}, {height}, {education}, {job}, {income}, {marriage}, {staying}, {child}, {zodiac}, {target}, {condition}, {form}, {introduce})'.format(id=idProfile,
+[raw_json.append( "(" + '{id}, {name}, {img} , {district}, {city}, {gender}, {age}, {phone}, {height}, {education}, {job}, {income}, {marriage}, {staying}, {child}, {zodiac}, {target}, {condition}, {form}, {introduce}, {urlProfile})'.format(id=idProfile,
 name="'" + name + "'" if name != "null" else "null",
-lives="'" + lives + "'" if lives != "null" else "null",
+img="'" + img + "'" if img != "null" else "null",
+district="'" + district + "'" if district != "null" else "null",
+city="'" + city + "'" if city != "null" else "null",
 gender="'" + gender + "'" if gender != "null" else "null",
 age="'" + age + "'" if age != "null" else "null",
 phone="'" + phoneProfile + "'" if phoneProfile != "null" else "null",
@@ -226,15 +241,19 @@ zodiac="'" + zodiac + "'" if zodiac != "null" else "null",
 target="'" + target + "'" if target != "null" else "null",
 condition="'" + condition + "'" if condition != "null" else "null",
 form="'" + form + "'" if form != "null" else "null",
-introduce="'" + introduce + "'" if introduce != "null" else "null")) for (idProfile, name, lives, gender, age, phoneProfile, height, education, job, income, marriage, staying, child, zodiac, target, condition, form, introduce) in Crawl_Manager.arrProfile]
+introduce="'" + introduce + "'" if introduce != "null" else "null",
+urlProfile="'" + urlProfile + "'" if urlProfile != "null" else "null")) for (idProfile, name, img, district, city, gender, age, phoneProfile, height, education, job, income, marriage, staying, child, zodiac, target, condition, form, introduce, urlProfile) in Crawl_Manager.arrProfile]
 
 f = open("Exported.sql", "w")
 f.write("CREATE TABLE IF NOT EXISTS `data1` (\n")
 f.write("`id` INT,\n")
 f.write("`name` VARCHAR(65535) CHARACTER SET utf8,\n")
-f.write("`lives` VARCHAR(65535) CHARACTER SET utf8,\n")
+f.write("`img` VARCHAR(65535) CHARACTER SET utf8,\n")
+f.write("`district` VARCHAR(65535) CHARACTER SET utf8,\n")
+f.write("`city` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`gender` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`age` VARCHAR(65535) CHARACTER SET utf8,\n")
+f.write("`phone` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`height` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`education` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`job` VARCHAR(65535) CHARACTER SET utf8,\n")
@@ -246,7 +265,8 @@ f.write("`zodiac` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`target` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`condition` VARCHAR(65535) CHARACTER SET utf8,\n")
 f.write("`form` VARCHAR(65535) CHARACTER SET utf8,\n")
-f.write("`introduce` VARCHAR(65535) CHARACTER SET utf8\n")
+f.write("`introduce` VARCHAR(65535) CHARACTER SET utf8,\n")
+f.write("`urlProfile` VARCHAR(65535) CHARACTER SET utf8\n")
 f.write(");\n")
 f.write("INSERT INTO `data1` VALUES\n")
 f.write(",\n".join(raw_json))
